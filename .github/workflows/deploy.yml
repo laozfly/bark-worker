@@ -1,5 +1,4 @@
 name: Deploy
-
 on:
   push:
     branches:
@@ -16,7 +15,6 @@ on:
         default: ""
         required: true
         type: string
-
 jobs:
   deploy:
     name: Deploy
@@ -26,15 +24,12 @@ jobs:
       
     steps:
       - uses: actions/checkout@v4
-
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
-
       - name: Install wrangler
         run: npm install -g wrangler
-
       - name: Verify Cloudflare API Token
         run: |
           echo "Verifying Cloudflare API Token..."
@@ -61,15 +56,18 @@ jobs:
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ inputs.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ inputs.CLOUDFLARE_API_TOKEN }}
-
-      - name: Update wrangler.toml
+      - name: Update wrangler.jsonc
         run: |
-          sed -i 's/"database_id": ".*"/"database_id": "'$DB_ID'"/' wrangler.json
-
+          sed -i 's/"database_id": ".*"/"database_id": "'$DB_ID'"/' wrangler.jsonc
+      - name: Run Database Migrations
+        run: wrangler d1 migrations apply database --remote
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ inputs.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ inputs.CLOUDFLARE_API_TOKEN }}
       - name: Deploy worker
-        uses: cloudflare/wrangler-action@v3.14.1
+        uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ inputs.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ inputs.CLOUDFLARE_ACCOUNT_ID }}
           command: "deploy"
-          wranglerVersion: "4.16.1"
+          wranglerVersion: "4.84.1"
